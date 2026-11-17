@@ -74,3 +74,46 @@ def test_slice_check_blocks_a_slice_below_floor():
     spec = dict(SPEC, slices=[{"name": "denial", "metric": "pass_rate", "min": 0.9, "blocking": True}])
     blocked, _ = gate.slice_check(_report(rows, {"pass_rate": 0.75}), base, spec)
     assert blocked == ["slice:denial/pass_rate"]
+
+
+def test_integrity_rejects_duplicate_rows_even_when_count_matches():
+    from lab9 import gate
+    base = _report(copy.deepcopy(ROWS), {"pass_rate": 1.0})
+    duplicate = copy.deepcopy(base)
+    duplicate["rows"][-1] = copy.deepcopy(duplicate["rows"][0])
+    assert gate.integrity_check(duplicate, base, SPEC)
+
+
+def test_integrity_rejects_failures_on_a_green_report():
+    from lab9 import gate
+    base = _report(copy.deepcopy(ROWS), {"pass_rate": 1.0})
+    broken = copy.deepcopy(base)
+    broken["evaluator_failures"] = ["E-000@1:grader crashed"]
+    assert gate.integrity_check(broken, base, SPEC)
+
+
+def test_integrity_rejects_hidden_row_failure_and_slice_relabel():
+    from lab9 import gate
+    base = _report(copy.deepcopy(ROWS), {"pass_rate": 1.0})
+    for field, value in [("pass_rate", None), ("pass_rate", False), ("slices", [])]:
+        forged = copy.deepcopy(base)
+        forged["rows"][0][field] = value
+        assert gate.integrity_check(forged, base, SPEC)
+
+
+def test_ratchet_rejects_removed_metric_and_slice_constraints():
+    from lab9 import gate
+    base = _report(copy.deepcopy(ROWS), {"pass_rate": 1.0})
+    old = dict(SPEC, slices=[{"name": "denial", "metric": "pass_rate", "min": 0.9,
+                             "no_significant_drop": True, "blocking": True}])
+    for change in ("remove_metric", "remove_slice", "drop_significance", "disable_blocking"):
+        new = copy.deepcopy(old)
+        if change == "remove_metric":
+            new["metrics"] = []
+        elif change == "remove_slice":
+            new["slices"] = []
+        elif change == "drop_significance":
+            del new["slices"][0]["no_significant_drop"]
+        else:
+            new["slices"][0]["blocking"] = False
+        assert gate.integrity_check(base, base, new, old)

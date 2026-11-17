@@ -32,10 +32,10 @@ FM_CODE = re.compile(r"FM-\d{2}")
 # Risk coverage, not a claim that every replay exhibits these failures.
 # Secret-only tags cover confidentiality; they do not cover all business risks.
 FAILURE_MODES_V1 = {
-    "C-001": ["FM-04"], "C-002": ["FM-03"], "C-003": ["FM-01"],
+    "C-001": ["FM-04", "FM-07"], "C-002": ["FM-03"], "C-003": ["FM-01"],
     "C-004": ["FM-01"], "C-005": ["FM-01"], "C-006": ["FM-06"],
     "C-007": ["FM-02"], "C-008": ["FM-08"], "C-009": ["FM-01"],
-    "C-010": ["FM-01"], "C-011": ["FM-01"], "C-012": ["FM-01"],
+    "C-010": ["FM-01", "FM-07"], "C-011": ["FM-01", "FM-07"], "C-012": ["FM-01"],
     "C-013": ["FM-02", "FM-05"], "C-014": ["FM-05", "FM-08"],
 }
 

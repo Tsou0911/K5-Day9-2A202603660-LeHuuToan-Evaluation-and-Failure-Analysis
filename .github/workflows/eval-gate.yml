@@ -34,6 +34,8 @@ jobs:
       - run: python -m lab9.smoke
       - run: python -m pytest -q -m student -o addopts= -k "lab9 and not advanced"
       - run: python -m lab9.evalset --check
+      - name: Verify M3 detection and false alarms
+        run: python -m lab9.mutation --detect --spec "$EVAL_SPEC"
       - name: Evaluate and gate the PR swarm
         shell: bash
         run: |
@@ -81,5 +83,11 @@ jobs:
         run: python -m pytest -q -m student -o addopts= -k advanced
       - if: steps.has.outputs.v2
         run: python -m lab9.evalset --v2
+      - if: steps.has.outputs.v2
+        name: Measure A/A noise for M6
+        run: python -m lab9.mutation --spec config/metric_spec_v2.yaml --aa 66,77,88,99,110
+      - if: steps.has.outputs.v2
+        name: Verify v2 baseline passes its own gate
+        run: python -m lab9.gate --pr reports/baseline_v2.json --baseline reports/baseline_v2.json --spec config/metric_spec_v2.yaml
       - if: steps.has.outputs.v2
         run: python -m lab9.mutation --spec config/metric_spec_v2.yaml --baseline reports/baseline_v2.json

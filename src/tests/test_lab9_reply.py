@@ -49,3 +49,13 @@ def test_lab9_trace_case_c014_regression_and_fixed():
         context = ctx(case["trial"], case["label"])
         assert RefundAmountCorrect().evaluate(context).value is expected
         assert ReplyAmountMatchesLedger().evaluate(context).value is expected
+
+
+def test_lab9_c013_zero_ledger_does_not_hide_wrong_proposal():
+    from lab9.graders import ProposalAmountCorrect, RefundAmountCorrect
+    from lab9.trace_case import investigate
+    for shape, expected in [("seeded_regression", False), ("fixed", True)]:
+        case = investigate(shape, "C-013", 11)
+        context = ctx(case["trial"], case["label"])
+        assert RefundAmountCorrect().evaluate(context).value is True
+        assert ProposalAmountCorrect().evaluate(context).value is expected
