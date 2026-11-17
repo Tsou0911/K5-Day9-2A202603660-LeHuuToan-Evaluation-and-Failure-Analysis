@@ -1,30 +1,22 @@
-# Trace case: từ trace tới quyết định sai đầu tiên
+# Trace case: C-014@11
 
-Một trace case trả lời một câu: **bước nào là bước sai đầu tiên**, và test nào sẽ bắt được nó lần sau.
+Trial: seeded_regression C-014@11; compare fixed C-014@11.
 
-```bash
-cd src
-python -m lab9.trace_case --shape seeded_regression --claim C-002 --seed 11
-python -m lab9.trace_case --shape fixed --claim C-002 --seed 11   # đối chứng
+- Event 3: official full entitlement quote = 150000 VND.
+- Event 4: prior refund history = 30000 VND. Reading history is valid.
+- First wrong step: event 5 proposal = 120000. The agent pre-deducts history (FM-05).
+- Host deducts 30000 again, so actual ledger = 90000 instead of expected 120000.
+- Event 6 states 120000, inconsistent with ledger (FM-08, a downstream error).
+- Fixed: no pre-deduction proposal event; full quote goes to host, ledger=120000 and reply=120000.
+
+Regression: src/tests/test_lab9_reply.py::test_lab9_trace_case_c014_regression_and_fixed
+checks both RefundAmountCorrect and ReplyAmountMatchesLedger on real isolated trials.
+This existing eval item remains in v1; no additional claim was invented.
+
+Reproduce from src:
+```
+python -m lab9.trace_case --shape seeded_regression --claim C-014 --seed 11
+python -m lab9.trace_case --shape fixed --claim C-014 --seed 11
 ```
 
-Lệnh in ra ba phần: các event trong trace (`reply`, `decision`, `model_override`, `error` …), ledger so với nhãn, và lý do của grader Lab 8.
-
-## Mẫu điền (mỗi nhóm 1 case, lấy từ trial đang fail trong report)
-
-| Trường | Nội dung |
-|---|---|
-| Trial | `<shape> <claim>@<seed>`, run ID trong report |
-| Triệu chứng | Grader nào fail; reply nói gì so với ledger ghi gì |
-| Bước sai đầu tiên | Số thứ tự event + kind + trích payload (≤1 dòng) |
-| Vì sao là bước *đầu tiên* | Các bước trước đó đúng ra sao (dẫn số event) |
-| Failure mode | Mã FM-xx trong `docs/failure_taxonomy.md` |
-| Đối chứng | Cùng claim@seed trên shape `fixed`: bước đó khác thế nào |
-| Regression test | Tên test + grader/assert nào bắt được; đã thấy fail trên variant lỗi và pass trên `fixed` chưa |
-| Chưa chắc chắn | Điều trace không chứng minh được |
-
-## Quy tắc
-
-- Đọc **ledger trước reply**: reply trôi chảy vẫn có thể đi kèm một khoản hoàn sai.
-- "Bước sai đầu tiên" phải dẫn số event cụ thể, không phải "agent bị nhầm".
-- Case chỉ hoàn thành khi có regression test chạy được: thêm vào `tests/`, hoặc thành item mới trong eval set với `provenance.from_trace`.
+The trace proves arithmetic and reply inconsistencies, not the model's private reasoning.
