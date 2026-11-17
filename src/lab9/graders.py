@@ -90,6 +90,17 @@ class DbFactKept(Evaluator[Any, Trial]):
 
 
 @dataclass
+class ProposalAmountCorrect(Evaluator[Any, Trial]):
+    """Catch pre-deduction even when the ledger correctly remains zero (C-013)."""
+
+    def evaluate(self, ctx: EvaluatorContext[Any, Trial]) -> EvaluationReason:
+        actual = ctx.output["result"].get("proposal_amount")
+        expected = (ctx.expected_output or {})["proposal_amount"]
+        ok = type(actual) is int and actual == expected
+        return EvaluationReason(value=ok, reason=None if ok else f"proposal={actual}, expected={expected}")
+
+
+@dataclass
 class ReplyAmountMatchesLedger(Evaluator[Any, Trial]):
     """Check explicit monetary claims in the final reply against the ledger.
 
@@ -128,4 +139,5 @@ GRADERS: dict[str, type[Evaluator]] = {
     "refund_amount_correct": RefundAmountCorrect,
     "db_fact_kept": DbFactKept,
     "reply_amount_matches_ledger": ReplyAmountMatchesLedger,
+    "proposal_amount_correct": ProposalAmountCorrect,
 }
